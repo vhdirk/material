@@ -17,6 +17,7 @@
 $baseline-grid:            8px !default;
 $layout-gutter-width:      ($baseline-grid * 2) !default;
 
+$layout-breakpoint-xxs:    480px !default;
 $layout-breakpoint-xs:     600px !default;
 $layout-breakpoint-sm:     960px !default;
 $layout-breakpoint-md:     1280px !default;
@@ -404,19 +405,38 @@ $layout-breakpoint-lg:     1920px !default;
  *
  *  hide means hide everywhere
  *  Sizes:
+ *         $layout-breakpoint-xxs:    480px !default;
  *         $layout-breakpoint-xs:     600px !default;
  *         $layout-breakpoint-sm:     960px !default;
  *         $layout-breakpoint-md:     1280px !default;
  *         $layout-breakpoint-lg:     1920px !default;
  */
 
-
-@media (max-width: $layout-breakpoint-xs - 1) {
-  // Xtra-SMALL  SCREEN
-  [hide-xs], [hide] {
-    &:not([show-xs]):not([show]) {
+@media (max-width: $layout-breakpoint-xxs - 1) {
+  // XXtra-SMALL  SCREEN
+  [hide-xxs], [hide] {
+    &:not([show-xxs]):not([show]) {
       display: none;
     }
+  }
+  @include layouts_for_breakpoint(xxs);
+}
+
+@media (min-width: $layout-breakpoint-xxs) {
+  // BIGGER THAN XXtra-SMALL SCREEN
+  @include layouts_for_breakpoint(gt-xxs);
+
+}
+
+@media (min-width: $layout-breakpoint-xxs) and (max-width: $layout-breakpoint-xs - 1) {
+  // Xtra-SMALL  SCREEN
+  [hide-sm], [hide-gt-xxs], [hide-gt-xs] {
+    &:not([show-gt-xxs]):not([show-gt-xs]):not([show-sm]):not([show]) {
+      display: none;
+    }
+  }
+  [hide-sm]:not([show-sm]):not([show]) {
+    display: none;
   }
   @include layouts_for_breakpoint(xs);
 }
@@ -429,8 +449,8 @@ $layout-breakpoint-lg:     1920px !default;
 
 @media (min-width: $layout-breakpoint-xs) and (max-width: $layout-breakpoint-sm - 1) {
   // SMALL SCREEN
-  [hide-sm], [hide-gt-xs] {
-    &:not([show-gt-xs]):not([show-sm]):not([show]) {
+  [hide-sm], [hide-gt-xxs], [hide-gt-xs]{
+    &:not([show-gt-xxs]):not([show-gt-xs]):not([show-sm]):not([show]) {
       display: none;
     }
   }
@@ -448,8 +468,8 @@ $layout-breakpoint-lg:     1920px !default;
 
 @media (min-width: $layout-breakpoint-sm) and (max-width: $layout-breakpoint-md - 1) {
   // MEDIUM SCREEN
-  [hide], [hide-gt-xs], [hide-gt-sm] {
-      &:not([show-gt-xs]):not([show-gt-sm]):not([show-md]):not([show]) {
+  [hide], [hide-gt-xxs], [hide-gt-xs], [hide-gt-sm] {
+      &:not([show-gt-xxs]):not([show-gt-xs]):not([show-gt-sm]):not([show-md]):not([show]) {
         display: none;
       }
     }
@@ -466,8 +486,8 @@ $layout-breakpoint-lg:     1920px !default;
 
 @media (min-width: $layout-breakpoint-md) and (max-width: $layout-breakpoint-lg - 1) {
   // LARGE SCREEN
-  [hide],[hide-gt-xs], [hide-gt-sm], [hide-gt-md] {
-      &:not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-lg]):not([show]) {
+  [hide],[hide-gt-xxs], [hide-gt-xs], [hide-gt-sm], [hide-gt-md] {
+      &:not([show-gt-xxs]):not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-lg]):not([show]) {
         display: none;
       }
     }
@@ -484,8 +504,8 @@ $layout-breakpoint-lg:     1920px !default;
   @include layouts_for_breakpoint(xl);
 
   // BIGGER THAN LARGE SCREEN
-  [hide], [hide-gt-xs], [hide-gt-sm], [hide-gt-md], [hide-gt-lg] {
-    &:not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-gt-lg]):not([show-xl]):not([show]) {
+  [hide], [hide-gt-xxs], [hide-gt-xs], [hide-gt-sm], [hide-gt-md], [hide-gt-lg] {
+    &:not([show-gt-xxs]:not([show-gt-xs]):not([show-gt-sm]):not([show-gt-md]):not([show-gt-lg]):not([show-xl]):not([show]) {
       display: none;
     }
   }
