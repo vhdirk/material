@@ -1,8 +1,8 @@
 /** Styles for mdDatepicker. */
-$md-datepicker-button-gap: 12px;  // Space between the text input and the calendar-icon button.
-$md-datepicker-border-bottom-gap: 5px;  // Space between input and the grey underline.
-$md-datepicker-open-animation-duration: 0.2s;
-$md-datepicker-triangle-button-width: 36px;
+$md-datepicker-button-gap: 12px !default;  // Space between the text input and the calendar-icon button.
+$md-datepicker-border-bottom-gap: 5px !default;  // Space between input and the grey underline.
+$md-datepicker-open-animation-duration: 0.2s !default;
+$md-datepicker-triangle-button-width: 36px !default;
 
 md-datepicker {
   // Don't let linebreaks happen between the open icon-button and the input.
@@ -90,8 +90,12 @@ md-datepicker {
   position: absolute;
   right: 0;
   left: 120px;
-
   height: 100%;
+
+  // The margin pulls it an extra pixel to the left, which gives it a slight overlap
+  // with the input container. This ensures that there are no gaps between the two
+  // elements.
+  margin-left: -1px;
 }
 
 // The calendar portion of the floating pane (vs. the input mask).
@@ -114,7 +118,7 @@ md-datepicker {
 // Down triangle/arrow indicating that the datepicker can be opened.
 // We can do this entirely with CSS without needing to load an icon.
 // See https://css-tricks.com/snippets/css/css-triangle/
-$md-date-arrow-size: 5px;
+$md-date-arrow-size: 5px !default;
 .md-datepicker-expand-triangle {
   // Center the triangle inside of the button so that the
   // ink ripple origin looks correct.
@@ -137,7 +141,7 @@ $md-date-arrow-size: 5px;
   top: 0;
 
   // TODO(jelbourn): This position isn't great on all platforms.
-  transform: translateY(-25%) translateX(45%);
+  @include rtl(transform, translateY(-25%) translateX(45%), translateY(-25%) translateX(-45%));
 }
 
 // Need crazy specificity to override .md-button.md-icon-button.
@@ -163,6 +167,10 @@ md-datepicker[disabled] {
 .md-datepicker-open {
   .md-datepicker-input-container {
     @include rtl-prop(margin-left, margin-right, -$md-datepicker-button-gap);
+
+    // The negative bottom margin prevents the content around the datepicker
+    // from jumping when it gets opened.
+    margin-bottom: -$md-datepicker-border-bottom-gap;
     border: none;
   }
 

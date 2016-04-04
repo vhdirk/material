@@ -456,9 +456,9 @@ $layout-breakpoint-lg:     1920px !default;
         display: none;
       }
     }
-    [hide-sm]:not([show-sm]):not([show]) {
-      display: none;
-    }
+  [hide-sm]:not([show-sm]):not([show]) {
+    display: none;
+  }
   @include layouts_for_breakpoint(sm);
 }
 

@@ -52,6 +52,27 @@ describe('mdSidenav', function() {
       expect($rootScope.show).toBe(false);
     }));
 
+    it('should show a backdrop by default', inject(function($rootScope, $material) {
+      var el = setup('md-is-open="show"');
+      $rootScope.$apply('show = true');
+
+      $material.flushOutstandingAnimations();
+
+      var backdrop = el.parent().find('md-backdrop');
+      expect(backdrop.length).toBe(1);
+    }));
+
+    it('should not show a backdrop if md-disable-backdrop is set to true', inject(function($rootScope, $material) {
+      var el = setup('md-is-open="show" md-disable-backdrop');
+      $rootScope.$apply('show = true');
+
+      $material.flushOutstandingAnimations();
+
+      var backdrop = el.parent().find('md-backdrop');
+      expect(backdrop.length).toBe(0);
+    }));
+
+
     it('should focus sidenav on open', inject(function($rootScope, $material, $document) {
       jasmine.mockElementFocus(this);
       var el = setup('md-is-open="show"');

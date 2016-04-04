@@ -160,6 +160,20 @@ describe('md-input-container directive', function() {
     expect(el).not.toHaveClass('md-input-focused');
   });
 
+  it('should skip a hidden input', function() {
+    var container = setup('type="hidden"');
+    var controller = container.controller('mdInputContainer');
+    var textInput = angular.element('<input type="text">');
+
+    expect(controller.input).toBeUndefined();
+
+    container.append(textInput);
+    $compile(textInput)(pageScope);
+
+    expect(controller.input[0]).toBe(textInput[0]);
+  });
+
+
   it('should set has-value class on container for non-ng-model input', function() {
     var el = setup();
     expect(el).not.toHaveClass('md-input-has-value');
@@ -422,7 +436,7 @@ describe('md-input-container directive', function() {
     expect(el[0].querySelector("[ng-messages]").classList.contains('md-auto-hide')).toBe(false);
   }));
 
-  it('should select the input value on focus', inject(function() {
+  it('should select the input value on focus', inject(function($timeout) {
     var container = setup('md-select-on-focus');
     var input = container.find('input');
     input.val('Auto Text Select');
@@ -438,7 +452,9 @@ describe('md-input-container directive', function() {
     document.body.removeChild(container[0]);
 
     function isTextSelected(input) {
-      return input.selectionStart == 0 && input.selectionEnd == input.value.length
+      // The selection happens in a timeout which needs to be flushed.
+      $timeout.flush();
+      return input.selectionStart === 0 && input.selectionEnd == input.value.length;
     }
   }));
 
@@ -510,6 +526,22 @@ describe('md-input-container directive', function() {
       $timeout.flush();
       var newHeight = textarea.offsetHeight;
       expect(textarea.offsetHeight).toBeGreaterThan(oldHeight);
+    });
+
+    it('should make the textarea scrollable once it has reached the row limit', function() {
+      var scrollableClass = '_md-textarea-scrollable';
+
+      createAndAppendElement('rows="2"');
+
+      ngTextarea.val('Single line of text');
+      ngTextarea.triggerHandler('input');
+
+      expect(ngTextarea.hasClass(scrollableClass)).toBe(false);
+
+      ngTextarea.val('Multiple\nlines\nof\ntext');
+      ngTextarea.triggerHandler('input');
+
+      expect(ngTextarea.hasClass(scrollableClass)).toBe(true);
     });
   });
 

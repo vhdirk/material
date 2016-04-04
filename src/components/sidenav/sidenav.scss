@@ -12,6 +12,7 @@ md-sidenav {
   max-width: $sidenav-mobile-width;
   bottom: 0;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
 
   ul {
     list-style: none;
@@ -70,7 +71,7 @@ md-sidenav {
 
   @extend .md-sidenav-left;
 }
-.md-sidenav-backdrop._md-locked-open {
+._md-sidenav-backdrop._md-locked-open {
   display: none;
 }
 

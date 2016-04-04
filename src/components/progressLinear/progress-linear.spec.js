@@ -16,6 +16,20 @@ describe('mdProgressLinear', function() {
     expect(progress.attr('md-mode')).toEqual('indeterminate');
   }));
 
+  it('should auto-set the md-mode to "indeterminate" if specified a not valid mode', inject(function($compile, $rootScope, $mdConstant) {
+    var element = $compile('<div>' +
+      '<md-progress-linear md-mode="test"></md-progress-linear>' +
+      '</div>')($rootScope);
+
+    $rootScope.$apply(function() {
+      $rootScope.progress = 50;
+      $rootScope.mode = "";
+    });
+
+    var progress = element.find('md-progress-linear');
+    expect(progress.attr('md-mode')).toEqual('indeterminate');
+  }));
+
   it('should trim the md-mode value', inject(function($compile, $rootScope, $mdConstant) {
     element = $compile('<div>' +
           '<md-progress-linear md-mode=" indeterminate"></md-progress-linear>' +
@@ -121,5 +135,16 @@ describe('mdProgressLinear', function() {
       bar2 = angular.element(progress[0].querySelectorAll('._md-bar2'))[0];
 
     expect(bar2.style[$mdConstant.CSS.TRANSFORM]).toBeFalsy();
+  }));
+
+  it('should hide the element if it is disabled', inject(function($compile, $rootScope) {
+    var element = $compile('<div>' +
+      '<md-progress-linear value="25" disabled>' +
+      '</md-progress-linear>' +
+      '</div>')($rootScope);
+
+    var progress = element.find('md-progress-linear').eq(0);
+
+    expect(progress.hasClass('_md-progress-linear-disabled')).toBe(true);
   }));
 });

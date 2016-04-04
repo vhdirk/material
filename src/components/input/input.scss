@@ -4,7 +4,7 @@ $input-label-default-offset: 24px !default;
 $input-label-default-scale: 1.0 !default;
 $input-label-float-offset: 6px !default;
 $input-label-float-scale: 0.75 !default;
-$input-label-float-width: $input-container-padding + 16px;
+$input-label-float-width: $input-container-padding + 16px !default;
 
 $input-placeholder-offset: $input-label-default-offset !default;
 
@@ -15,12 +15,12 @@ $input-padding-top: 2px !default;
 
 $input-error-font-size: 12px !default;
 $input-error-height: 24px !default;
-$input-error-line-height: $input-error-font-size + 2px;
-$error-padding-top: ($input-error-height - $input-error-line-height) / 2;
+$input-error-line-height: $input-error-font-size + 2px !default;
+$error-padding-top: ($input-error-height - $input-error-line-height) / 2 !default;
 
 $icon-offset: 36px !default;
 
-$icon-top-offset: ($icon-offset - $input-padding-top - $input-border-width-focused) / 4;
+$icon-top-offset: ($icon-offset - $input-padding-top - $input-border-width-focused) / 4 !default;
 
 $icon-float-focused-top: -8px !default;
 
@@ -82,11 +82,21 @@ md-input-container {
   textarea {
     resize: none;
     overflow: hidden;
-  }
 
-  textarea.md-input {
-    min-height: $input-line-height;
-    -ms-flex-preferred-size: auto; //IE fix
+    &.md-input {
+      min-height: $input-line-height;
+      -ms-flex-preferred-size: auto; //IE fix
+    }
+
+    &._md-textarea-scrollable,
+    &[md-no-autogrow] {
+      overflow: auto;
+    }
+
+    // The height usually gets set to 1 line by `.md-input`.
+    &[md-no-autogrow] {
+      height: auto;
+    }
   }
 
   label:not(._md-container-ignore) {
@@ -116,6 +126,10 @@ md-input-container {
     z-index: 1;
     transform: translate3d(0, $input-label-default-offset + 4, 0) scale($input-label-default-scale);
     transition: transform $swift-ease-out-duration $swift-ease-out-timing-function;
+
+    // The max-width is necessary, because in some browsers, using this together with
+    // a calc might cause it to overflow the parent. See #7403
+    max-width: 100%;
 
     @include rtl(transform-origin, left top, right top);
   }
@@ -201,8 +215,7 @@ md-input-container {
   //
   // ngMessage base styles - animations moved to input.js
   //
-  ng-messages, data-ng-messages, x-ng-messages,
-  [ng-messages], [data-ng-messages], [x-ng-messages] {
+  .md-input-messages-animation {
     position: relative;
     order: 4;
     overflow: hidden;
@@ -210,19 +223,14 @@ md-input-container {
 
     &.ng-enter {
       // Upon entering the DOM, messages should be hidden
-      ng-message, data-ng-message, x-ng-message,
-      [ng-message], [data-ng-message], [x-ng-message],
-      [ng-message-exp], [data-ng-message-exp], [x-ng-message-exp] {
+      .md-input-message-animation {
         opacity: 0;
         margin-top: -100px;
       }
     }
   }
 
-  ng-message, data-ng-message, x-ng-message,
-  [ng-message], [data-ng-message], [x-ng-message],
-  [ng-message-exp], [data-ng-message-exp], [x-ng-message-exp],
-  .md-char-counter {
+  .md-input-message-animation, .md-char-counter {
     font-size: $input-error-font-size;
     line-height: $input-error-line-height;
     overflow: hidden;
