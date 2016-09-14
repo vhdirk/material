@@ -1,15 +1,13 @@
-DocsApp.directive('demoInclude', [
-  '$q', 
-  '$http', 
-  '$compile', 
-  '$templateCache',
+angular.module('docsApp').directive('demoInclude', [
+  '$q',
+  '$compile',
   '$timeout',
-function($q, $http, $compile, $templateCache, $timeout) {
+function($q, $compile, $timeout) {
   return {
     restrict: 'E',
     link: postLink
   };
-  
+
   function postLink(scope, element, attr) {
     var demoContainer;
 

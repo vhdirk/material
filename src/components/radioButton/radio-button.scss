@@ -4,6 +4,14 @@ $radio-text-margin: 10px !default;
 $radio-top-left: 12px !default;
 $radio-margin: 16px !default;
 
+@mixin md-radio-button-disabled {
+  cursor: default;
+
+  .md-container {
+    cursor: default;
+  }
+}
+
 md-radio-button {
   box-sizing: border-box;
   display: block;
@@ -12,16 +20,12 @@ md-radio-button {
   cursor: pointer;
   position: relative;
 
-  // disabled
+  // When the radio-button is disabled.
   &[disabled] {
-    cursor: default;
-
-    ._md-container {
-      cursor: default;
-    }
+    @include md-radio-button-disabled();
   }
 
-  ._md-container {
+  .md-container {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -61,11 +65,11 @@ md-radio-button {
     }
   }
 
-  &.md-align-top-left > div._md-container {
+  &.md-align-top-left > div.md-container {
      top: $radio-top-left;
    }
 
-  ._md-off {
+  .md-off {
     box-sizing: border-box;
     position: absolute;
     top: 0;
@@ -78,7 +82,7 @@ md-radio-button {
     transition: border-color ease 0.28s;
   }
 
-  ._md-on {
+  .md-on {
     box-sizing: border-box;
     position: absolute;
     top: 0;
@@ -90,11 +94,11 @@ md-radio-button {
     transform: scale(0);
   }
 
-  &.md-checked ._md-on {
+  &.md-checked .md-on {
     transform: scale(0.50);
   }
 
-  ._md-label {
+  .md-label {
     box-sizing: border-box;
     position: relative;
     display: inline-block;
@@ -110,6 +114,7 @@ md-radio-button {
 }
 
 md-radio-group {
+  /** Layout adjustments for the radio group. */
   &.layout-column,
   &.layout-xs-column, &.layout-gt-xs-column,
   &.layout-sm-column, &.layout-gt-sm-column,
@@ -139,16 +144,22 @@ md-radio-group {
       }
     }
   }
+
   &:focus {
     outline: none;
   }
+
   &.md-focused {
-    .md-checked ._md-container:before {
+    .md-checked .md-container:before {
       left: -8px;
       top: -8px;
       right: -8px;
       bottom: -8px;
     }
+  }
+
+  &[disabled] md-radio-button {
+    @include md-radio-button-disabled();
   }
 }
 
@@ -167,7 +178,7 @@ md-radio-group {
 }
 
 @media screen and (-ms-high-contrast: active) {
-  md-radio-button.md-default-theme ._md-on {
+  md-radio-button.md-default-theme .md-on {
     background-color: #fff;
   }
 }

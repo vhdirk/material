@@ -26,7 +26,7 @@ $contact-chip-name-width: rem(12) !default;
       .md-contact-name {
         display: inline-block;
         height: $chip-height;
-        @include rtl-prop(margin-left, margin-right, rem(0.8));
+        @include rtl-prop(margin-left, margin-right, rem(0.8), auto);
       }
     }
   }
@@ -39,7 +39,7 @@ $contact-chip-name-width: rem(12) !default;
     margin-top: $contact-chip-suggestion-margin;
   }
   .md-contact-name {
-    @include rtl-prop(margin-left, margin-right, $contact-chip-suggestion-margin);
+    @include rtl-prop(margin-left, margin-right, $contact-chip-suggestion-margin, auto);
     width: $contact-chip-name-width;
   }
   .md-contact-name, .md-contact-email {
@@ -60,20 +60,24 @@ $contact-chip-name-width: rem(12) !default;
   @include rtl(padding, $chip-wrap-padding, rtl-value($chip-wrap-padding));
   vertical-align: middle;
 
-  &.md-readonly ._md-chip-input-container {
+  &.md-readonly .md-chip-input-container {
     min-height: $chip-height;
   }
 
   &:not(.md-readonly) {
     cursor: text;
+  }
 
-    md-chip:not(.md-readonly) {
-      @include rtl-prop(padding-right, padding-left, $chip-remove-padding-right);
+  &.md-removable {
 
-      ._md-chip-content {
-        @include rtl-prop(padding-right, padding-left, rem(0.4));
+    md-chip {
+      @include rtl-prop(padding-right, padding-left, $chip-remove-padding-right, 0);
+
+      .md-chip-content {
+        @include rtl-prop(padding-right, padding-left, rem(0.4), 0);
       }
     }
+
   }
 
   md-chip {
@@ -89,7 +93,7 @@ $contact-chip-name-width: rem(12) !default;
     max-width: 100%;
     position: relative;
 
-    ._md-chip-content {
+    .md-chip-content {
       display: block;
       @include rtl(float, left, right);
       white-space: nowrap;
@@ -106,12 +110,12 @@ $contact-chip-name-width: rem(12) !default;
       -khtml-user-select: none; /* webkit (konqueror) browsers */
       -ms-user-select: none; /* IE10+ */
     }
-    ._md-chip-remove-container {
+    .md-chip-remove-container {
       position: absolute;
-      @include rtl-prop(right, left, 0);
+      @include rtl-prop(right, left, 0, auto);
       line-height: $chip-remove-line-height;
     }
-    ._md-chip-remove {
+    .md-chip-remove {
       text-align: center;
       width: $chip-height;
       height: $chip-height;
@@ -132,7 +136,7 @@ $contact-chip-name-width: rem(12) !default;
       }
     }
   }
-  ._md-chip-input-container {
+  .md-chip-input-container {
     display: block;
     line-height: $chip-height;
     @include rtl(margin, $chip-margin, rtl-value($chip-margin));
@@ -195,11 +199,11 @@ $contact-chip-name-width: rem(12) !default;
 }
 // IE only
 @media screen and (-ms-high-contrast: active) {
-  ._md-chip-input-container,
+  .md-chip-input-container,
   md-chip {
     border: 1px solid #fff;
   }
-  ._md-chip-input-container md-autocomplete {
+  .md-chip-input-container md-autocomplete {
     border: none;
   }
 }

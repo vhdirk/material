@@ -54,7 +54,7 @@
   outline: none;
   background: transparent;
 
-  // The the "clear X" that IE adds to input[type="search"]
+  // The "clear X" that IE adds to input[type="search"]
   &::-ms-clear {
     display: none;
   }
@@ -104,6 +104,16 @@
   @return $map-str + '}';
 }
 
+// This is a mixin, which fixes IE11's vertical alignment issue, when using `min-height`.
+// See https://connect.microsoft.com/IE/feedback/details/816293/
+@mixin ie11-min-height-flexbug($min-height) {
+  &::before {
+    content: '';
+    min-height: $min-height;
+    visibility: hidden;
+    display: inline-block;
+  }
+}
 
 // mixin definition ; sets LTR and RTL within the same style call
 // @see https://css-tricks.com/almanac/properties/d/direction/
@@ -115,10 +125,10 @@
   }
 }
 
-@mixin rtl-prop($ltr-prop, $rtl-prop, $value) {
+@mixin rtl-prop($ltr-prop, $rtl-prop, $value, $reset-value) {
   #{$ltr-prop}: $value;
   [dir=rtl] & {
-    #{$ltr-prop}: auto;
+    #{$ltr-prop}: $reset-value;
     #{$rtl-prop}: $value;
   }
 }
@@ -161,7 +171,7 @@
   $height: $checkbox-height,
   $border-width: $checkbox-border-width,
   $border-radius: $checkbox-border-radius) {
-  ._md-container {
+  .md-container {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -213,7 +223,7 @@
   }
 
   // unchecked
-  ._md-icon {
+  .md-icon {
     box-sizing: border-box;
     transition: 240ms;
     position: absolute;
@@ -226,15 +236,15 @@
     border-radius: $border-radius;
   }
 
-  &#{$checkedSelector} ._md-icon {
-    border: none;
+  &#{$checkedSelector} .md-icon {
+    border-color: transparent;
 
     &:after {
       box-sizing: border-box;
       transform: rotate(45deg);
       position: absolute;
-      left: $width / 3;
-      top: $width / 9;
+      left: $width / 3 - $border-width;
+      top: $width / 9 - $border-width;
       display: table;
       width: $width / 3;
       height: $width * 2 / 3;
@@ -251,7 +261,7 @@
     cursor: default;
   }
 
-  &.md-indeterminate ._md-icon {
+  &.md-indeterminate .md-icon {
     &:after {
       box-sizing: border-box;
       position: absolute;
@@ -266,6 +276,48 @@
       border-top: 0;
       border-left: 0;
       content: '';
+    }
+  }
+}
+
+// Mixin to create a primary checkbox.
+// Used by the checkbox and select component.
+@mixin checkbox-primary($checkedSelector: '.md-checked') {
+  .md-ripple {
+    color: '{{primary-600}}';
+  }
+
+  &#{$checkedSelector} .md-ripple {
+    color: '{{background-600}}';
+  }
+
+  .md-ink-ripple {
+    color: '{{foreground-2}}';
+  }
+
+  &#{$checkedSelector} .md-ink-ripple {
+    color: '{{primary-color-0.87}}';
+  }
+
+  &:not(.md-checked) .md-icon {
+    border-color: '{{foreground-2}}';
+  }
+
+  &#{$checkedSelector} .md-icon {
+    background-color: '{{primary-color-0.87}}';
+  }
+
+  &#{$checkedSelector}.md-focused .md-container:before {
+    background-color: '{{primary-color-0.26}}';
+  }
+
+  &#{$checkedSelector} .md-icon:after {
+    border-color: '{{primary-contrast-0.87}}';
+  }
+
+  & .md-indeterminate[disabled] {
+    .md-container {
+      color: '{{foreground-3}}';
     }
   }
 }

@@ -12,6 +12,12 @@ describe('material.components.menuBar', function() {
 
   describe('MenuBar', function() {
     describe('MenuBar Directive', function() {
+
+      it('should have `._md` class indicator', function() {
+        var element = setup();
+        expect(element.hasClass('_md')).toBe(true);
+      });
+
       it('sets md-position-mode to "bottom left" on nested menus', function() {
         var menuBar = setup();
         var nestedMenu = menuBar[0].querySelector('md-menu');
@@ -19,12 +25,54 @@ describe('material.components.menuBar', function() {
         expect(nestedMenu.getAttribute('md-position-mode')).toBe('left bottom');
       });
 
+      it('should close when clicking on the wrapping toolbar', inject(function($compile, $rootScope, $timeout) {
+        var ctrl = null;
+        var toolbar = $compile(
+          '<md-toolbar>' +
+            '<md-menu-bar>' +
+              '<md-menu ng-repeat="i in [1, 2, 3]">' +
+                '<button ng-click></button>' +
+                '<md-menu-content></md-menu-content>' +
+              '</md-menu>' +
+            '</md-menu-bar>' +
+          '</md-toolbar>'
+        )($rootScope);
+
+        $rootScope.$digest();
+        ctrl = toolbar.find('md-menu-bar').controller('mdMenuBar');
+
+        toolbar.find('md-menu').eq(0).controller('mdMenu').open();
+        $timeout.flush();
+
+        expect(toolbar).toHaveClass('md-has-open-menu');
+        toolbar.triggerHandler('click');
+
+        expect(toolbar).not.toHaveClass('md-has-open-menu');
+        expect(ctrl.getOpenMenuIndex()).toBe(-1);
+      }));
+
       describe('ARIA', function() {
+
         it('sets role="menubar" on the menubar', function() {
           var menuBar = setup();
           var ariaRole = menuBar[0].getAttribute('role');
           expect(ariaRole).toBe('menubar');
         });
+
+        it('should set the role on the menu trigger correctly', inject(function($compile, $rootScope) {
+          var el = $compile(
+            '<md-menu-bar>' +
+              '<md-menu ng-repeat="i in [1, 2, 3]">' +
+                '<md-button id="triggerButton" ng-click="lastClicked = $index"></md-button>' +
+                '<md-menu-content></md-menu-content>' +
+              '</md-menu>' +
+            '</md-menu-bar>'
+          )($rootScope);
+
+          $rootScope.$digest();
+
+          expect(el[0].querySelector('#triggerButton').getAttribute('role')).toBe('menuitem');
+        }));
       });
 
       describe('nested menus', function() {
@@ -78,7 +126,7 @@ describe('material.components.menuBar', function() {
         }
 
         function getOpenSubMenu() {
-          var containers = document.body.querySelectorAll('._md-open-menu-container._md-active');
+          var containers = document.body.querySelectorAll('.md-open-menu-container.md-active');
           var lastContainer = containers.item(containers.length - 1);
 
           return angular.element(lastContainer.querySelector('md-menu-content'));
@@ -213,7 +261,7 @@ describe('material.components.menuBar', function() {
         it('clicks the focused menu', function() {
           var opened = false;
           spyOn(ctrl, 'getFocusedMenu').and.returnValue({
-            querySelector: function() { return true }
+            querySelector: function() { return true; }
           });
           spyOn(angular, 'element').and.returnValue({
             controller: function() { return {
@@ -295,8 +343,19 @@ describe('material.components.menuBar', function() {
 
   describe('md-menu-item directive', function() {
     describe('type="checkbox"', function() {
+      function setup(attrs) {
+        return setupMenuItem(attrs + ' type="checkbox"');
+      }
+
       it('compiles', function() {
         var menuItem = setup('ng-model="test"')[0];
+        expect(menuItem.classList.contains('md-indent')).toBe(true);
+        var children = menuItem.children;
+        expect(children[0].nodeName).toBe('MD-ICON');
+        expect(children[1].nodeName).toBe('MD-BUTTON');
+      });
+      it('compiles with ng-repeat', function() {
+        var menuItem = setup('ng-repeat="i in [1, 2, 3]"')[0];
         expect(menuItem.classList.contains('md-indent')).toBe(true);
         var children = menuItem.children;
         expect(children[0].nodeName).toBe('MD-ICON');
@@ -332,24 +391,22 @@ describe('material.components.menuBar', function() {
         expect(menuItem.children[0].style.display).toBe('');
         expect(button.getAttribute('aria-checked')).toBe('true');
       }));
-
-      function setup(attrs) {
-        attrs = attrs || '';
-
-        var template = '<md-menu-item type="checkbox" ' + attrs + '>Test Item</md-menu-item>'
-
-        var checkboxMenuItem;
-        inject(function($compile, $rootScope) {
-          checkboxMenuItem = $compile(template)($rootScope);
-          $rootScope.$digest();
-        });
-        return checkboxMenuItem;
-      }
     });
 
     describe('type="radio"', function() {
+      function setup(attrs) {
+        return setupMenuItem(attrs + ' type="radio"');
+      }
+
       it('compiles', function() {
         var menuItem = setup('ng-model="test"')[0];
+        expect(menuItem.classList.contains('md-indent')).toBe(true);
+        var children = menuItem.children;
+        expect(children[0].nodeName).toBe('MD-ICON');
+        expect(children[1].nodeName).toBe('MD-BUTTON');
+      });
+      it('compiles with ng-repeat', function() {
+        var menuItem = setup('ng-repeat="i in [1, 2, 3]"')[0];
         expect(menuItem.classList.contains('md-indent')).toBe(true);
         var children = menuItem.children;
         expect(children[0].nodeName).toBe('MD-ICON');
@@ -388,20 +445,24 @@ describe('material.components.menuBar', function() {
         expect(menuItem.children[0].style.display).toBeFalsy();
         expect(button.getAttribute('aria-checked')).toBe('true');
       }));
-
-      function setup(attrs) {
-        attrs = attrs || '';
-
-        var template = '<md-menu-item type="radio" ' + attrs + '>Test Item</md-menu-item>'
-
-        var radioMenuItem;
-        inject(function($compile, $rootScope) {
-          radioMenuItem = $compile(template)($rootScope);
-          $rootScope.$digest();
-        });
-        return radioMenuItem;
-      }
     });
+
+    function setupMenuItem(attrs) {
+      // We need to have a `md-menu-bar` as a parent of our menu item, because the menu-item
+      // is only wrapping and indenting the content if it's inside of a menu bar.
+      var menuBar;
+      var template =
+        '<md-menu-bar>' +
+          '<md-menu-item ' + (attrs = attrs || '') + '>Test Item</md-menu-item>' +
+        '</md-menu-bar>';
+
+      inject(function($compile, $rootScope) {
+        menuBar = $compile(template)($rootScope);
+        $rootScope.$digest();
+      });
+
+      return menuBar.find('md-menu-item');
+    }
   });
 
   function waitForMenuOpen() {

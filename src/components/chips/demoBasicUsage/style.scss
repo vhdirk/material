@@ -7,7 +7,7 @@
 .custom-chips {
   md-chip {
     position: relative;
-    ._md-chip-remove-container {
+    .md-chip-remove-container {
       position: absolute;
       right: 4px;
       top: 4px;
@@ -40,10 +40,13 @@
         }
       }
     }
-    &:not(.md-readonly) {
-      md-chip-template {
-        padding-right: 5px;
-      }
+  }
+
+  // Show custom padding for the custom delete button, which needs more space.
+  md-chips-wrap.md-removable {
+    md-chip md-chip-template {
+      padding-right: 5px;
     }
   }
+
 }

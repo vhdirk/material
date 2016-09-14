@@ -143,7 +143,7 @@ describe('mdCheckbox', function() {
     document.body.appendChild(checkbox[0]);
 
     var container = checkbox.children().eq(0);
-    expect(container[0]).toHaveClass('_md-container');
+    expect(container[0]).toHaveClass('md-container');
 
     // We simulate IE11's focus bug, which always focuses an unfocusable div
     // https://connect.microsoft.com/IE/feedback/details/1028411/
@@ -248,6 +248,20 @@ describe('mdCheckbox', function() {
       expect(checkbox.hasClass('ng-invalid')).toBe(true);
     });
 
+    it('properly unsets the md-checked CSS if ng-checked is undefined', function() {
+      var checkbox = compileAndLink('<md-checkbox ng-checked="value"></md-checkbox>');
+
+      expect(checkbox.hasClass(CHECKED_CSS)).toBe(false);
+    });
+
+    it('should mark the checkbox as selected on load with ng-checked', function() {
+      pageScope.isChecked = function() { return true; };
+
+      var checkbox = compileAndLink('<md-checkbox ng-model="checked" ng-checked="isChecked()"></md-checkbox>');
+
+      expect(checkbox).toHaveClass(CHECKED_CSS);
+    });
+
     describe('with the md-indeterminate attribute', function() {
 
       it('should set md-indeterminate attr to true by default', function() {
@@ -294,6 +308,14 @@ describe('mdCheckbox', function() {
 
         expect(checkbox).not.toHaveClass(INDETERMINATE_CSS);
         expect(checkbox).toHaveClass(CHECKED_CSS);
+      });
+
+      it('should mark the checkbox as selected, if the model is true and "md-indeterminate" is false', function() {
+        pageScope.checked = true;
+        var checkbox = compileAndLink('<md-checkbox ng-model="checked" md-indeterminate="false"></md-checkbox>');
+
+        expect(checkbox).toHaveClass(CHECKED_CSS);
+        expect(checkbox).not.toHaveClass(INDETERMINATE_CSS);
       });
 
     });

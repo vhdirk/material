@@ -2,7 +2,7 @@ angular
   .module('material.core')
   .service('$mdCompiler', mdCompilerService);
 
-function mdCompilerService($q, $http, $injector, $compile, $controller, $templateCache) {
+function mdCompilerService($q, $templateRequest, $injector, $compile, $controller) {
   /* jshint validthis: true */
 
   /*
@@ -89,9 +89,9 @@ function mdCompilerService($q, $http, $injector, $compile, $controller, $templat
     angular.extend(resolve, locals);
 
     if (templateUrl) {
-      resolve.$template = $http.get(templateUrl, {cache: $templateCache})
+      resolve.$template = $templateRequest(templateUrl)
         .then(function(response) {
-          return response.data;
+          return response;
         });
     } else {
       resolve.$template = $q.when(template);
@@ -114,7 +114,7 @@ function mdCompilerService($q, $http, $injector, $compile, $controller, $templat
 
           //Instantiate controller if it exists, because we have scope
           if (controller) {
-            var invokeCtrl = $controller(controller, locals, true);
+            var invokeCtrl = $controller(controller, locals, true, controllerAs);
             if (bindToController) {
               angular.extend(invokeCtrl.instance, locals);
             }
@@ -122,10 +122,6 @@ function mdCompilerService($q, $http, $injector, $compile, $controller, $templat
             //See angular-route source for this logic
             element.data('$ngControllerController', ctrl);
             element.children().data('$ngControllerController', ctrl);
-
-            if (controllerAs) {
-              scope[controllerAs] = ctrl;
-            }
 
             // Publish reference to this controller
             compiledData.controller = ctrl;

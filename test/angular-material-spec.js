@@ -91,7 +91,10 @@
     });
 
     /**
-     * Mocks angular.element#focus ONLY for the duration of a particular test.
+     * Mocks the focus method from the HTMLElement prototype for the duration
+     * of the running test.
+     *
+     * The mock will be automatically removed after the test finished.
      *
      * @example
      *
@@ -105,17 +108,20 @@
      * }));
      *
      */
-    jasmine.mockElementFocus = function(test) {
-      var focus = angular.element.prototype.focus;
+    jasmine.mockElementFocus = function() {
+      var _focusFn = HTMLElement.prototype.focus;
+
       inject(function($document) {
-        angular.element.prototype.focus = function() {
-          $document.activeElement = this[0];
+        HTMLElement.prototype.focus = function() {
+          $document.activeElement = this;
         };
       });
+
       // Un-mock focus after the test is done
       afterEach(function() {
-        angular.element.prototype.focus = focus;
+        HTMLElement.prototype.focus = _focusFn;
       });
+
     };
 
     /**
@@ -202,6 +208,75 @@
         };
       },
 
+      /**
+       * Asserts that an element has keyboard focus in the DOM.
+       * Accepts any of:
+       *   {string} - A CSS selector.
+       *   {angular.JQLite} - The result of a jQuery query.
+       *   {Element} - A DOM element.
+       */
+      toBeFocused: function() {
+        return {
+          'compare': function(actual) {
+            var pass =  getElement(actual)[0] === document.activeElement;
+            var not = pass ? 'not ' : '';
+            return {
+              'pass': pass,
+              'message': 'Expected element ' + not + 'to have focus.'
+            };
+          }
+        };
+      },
+
+      /**
+       * Asserts that a given selector matches one or more items.
+       * Accepts any of:
+       *   {string} - A CSS selector.
+       *   {angular.JQLite} - The result of a jQuery query.
+       *   {Element} - A DOM element.
+       */
+      toExist: function() {
+        return {
+          compare: function(actual) {
+            var el = getElement(actual);
+            var pass = el.length > 0;
+            var not = pass ? 'not ' : '';
+
+            return {
+              pass: pass,
+              message: 'Expected "' + actual +
+              '" ' + not + 'to match element(s), ' +
+              'but found ' + el.length +
+              ' items in the DOM'
+            };
+          }
+        };
+      },
+
+      /**
+       * Asserts that a given element contains a given substring in
+       * its innerHTML property.
+       * Accepts any of:
+       *   {string} - A CSS selector.
+       *   {angular.JQLite} - The result of a jQuery query.
+       *   {Element} - A DOM element.
+       */
+      toContainHtml: function() {
+        return {
+          compare: function(actual, expected) {
+            var el = getElement(actual);
+            var html = el.html();
+            var pass = html.indexOf(expected) !== -1;
+            var not = pass ? 'not ' : '';
+
+            return {
+              pass: pass,
+              message: 'Expected element ' + not + 'to contain the html ' +
+              '[' + expected + '] in [' + html + ']'
+            };
+          }
+        };
+      }
     });
 
     /**

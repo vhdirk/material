@@ -9,7 +9,8 @@
 }
 
 .md-grid-item-content {
-  height:96px;
+  height:90px;
+  padding-top:10px;
 }
 .md-grid-item-content md-icon {
   height: 48px;
@@ -21,7 +22,7 @@
   }
 
 
-md-list-item, md-list-item ._md-list-item-inner {
+md-list-item, md-list-item .md-list-item-inner {
   min-height: 48px;
 
 }
@@ -32,7 +33,7 @@ h2 {
 }
 
 
-.md-subheader ._md-subheader-inner {
+.md-subheader .md-subheader-inner {
   padding: 0;
 }
 

@@ -106,6 +106,11 @@ describe('mdProgressCircular', function() {
     expect(element.hasClass('_md-progress-circular-disabled')).toBe(true);
   });
 
+  it('should set the transform origin in all dimensions', function() {
+    var svg = buildIndicator('<md-progress-circular md-diameter="42px"></md-progress-circular>').find('svg').eq(0);
+    expect(svg.css('transform-origin')).toBe('21px 21px 21px');
+  });
+
   /**
    * Build a progressCircular
    */

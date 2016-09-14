@@ -163,7 +163,7 @@ describe('$mdThemingProvider', function() {
       expect(themingProvider._PALETTES.extended['100']).toEqual(testPalette['100']);
       expect(themingProvider._PALETTES.extended['50']).toEqual('newValue');
     });
-  }); 
+  });
 
   describe('css template parsing', function() {
     beforeEach(setup);
@@ -200,6 +200,40 @@ describe('$mdThemingProvider', function() {
       expect(themingProvider._parseRules(
         testTheme, 'primary', '.md-THEME_NAME-theme {}'
       ).join('')).toContain('.md-test-theme {}');
+    });
+
+    describe('background palette', function() {
+
+      function getRgbaBackgroundHue(hue) {
+        return themingProvider._rgba(themingProvider._PALETTES.testPalette[hue].value);
+      }
+
+      it('should parse for a light theme probably', function() {
+        testTheme.dark(false);
+
+        expect(parse('.md-THEME_NAME-theme { color: "{{background-default}}"; }')[0].content)
+          .toEqual('color: ' + getRgbaBackgroundHue('50') + ';');
+        expect(parse('.md-THEME_NAME-theme { color: "{{background-hue-1}}"; }')[0].content)
+          .toEqual('color: ' + getRgbaBackgroundHue('A100') + ';');
+        expect(parse('.md-THEME_NAME-theme { color: "{{background-hue-2}}"; }')[0].content)
+          .toEqual('color: ' + getRgbaBackgroundHue('100') + ';');
+        expect(parse('.md-THEME_NAME-theme { color: "{{background-hue-3}}"; }')[0].content)
+          .toEqual('color: ' + getRgbaBackgroundHue('300') + ';');
+      });
+
+      it('should parse for a dark theme probably', function() {
+        testTheme.dark(true);
+
+        expect(parse('.md-THEME_NAME-theme { color: "{{background-default}}"; }')[0].content)
+          .toEqual('color: ' + getRgbaBackgroundHue('A400') + ';');
+        expect(parse('.md-THEME_NAME-theme { color: "{{background-hue-1}}"; }')[0].content)
+          .toEqual('color: ' + getRgbaBackgroundHue('800') + ';');
+        expect(parse('.md-THEME_NAME-theme { color: "{{background-hue-2}}"; }')[0].content)
+          .toEqual('color: ' + getRgbaBackgroundHue('900') + ';');
+        expect(parse('.md-THEME_NAME-theme { color: "{{background-hue-3}}"; }')[0].content)
+          .toEqual('color: ' + getRgbaBackgroundHue('A200') + ';');
+      });
+
     });
 
     describe('parses foreground text and shadow', function() {
@@ -309,6 +343,121 @@ describe('$mdThemingProvider', function() {
     });
   });
 
+  describe('browser color', function () {
+    beforeEach(function () {
+      setup();
+      angular.element(document.getElementsByTagName('meta')).remove();
+    });
+
+    it('should use default primary color at the meta tag', function () {
+      var name = 'theme-color';
+      var content = themingProvider._PALETTES.testPalette['800'].hex;
+
+      expect(document.getElementsByName(name).length).toBe(0);
+
+      themingProvider.enableBrowserColor();
+
+      expect(document.getElementsByName(name).length).toBe(1);
+      expect(angular.element(document.getElementsByName(name)[0]).attr('content')).toBe(content);
+    });
+
+    it('should use default primary color with hue `200`', function () {
+      var name = 'theme-color';
+
+      var hue = '200';
+
+      var content = themingProvider._PALETTES.testPalette[hue].hex;
+
+      expect(document.getElementsByName(name).length).toBe(0);
+
+      themingProvider.enableBrowserColor({ hue: hue });
+
+      expect(document.getElementsByName(name).length).toBe(1);
+      expect(angular.element(document.getElementsByName(name)[0]).attr('content')).toBe(content);
+    });
+
+    it('should use red palette', function () {
+      var name = 'theme-color';
+
+      var content = themingProvider._PALETTES.red['800'].hex;
+
+      expect(document.getElementsByName(name).length).toBe(0);
+
+      themingProvider.enableBrowserColor({ palette: 'red' });
+
+      expect(document.getElementsByName(name).length).toBe(1);
+      expect(angular.element(document.getElementsByName(name)[0]).attr('content')).toBe(content);
+    });
+
+    it('should use test theme', function () {
+      var name = 'theme-color';
+
+      var content = themingProvider._PALETTES.testPalette['800'].hex;
+
+      expect(document.getElementsByName(name).length).toBe(0);
+
+      themingProvider.enableBrowserColor({ theme: 'test' });
+
+      expect(document.getElementsByName(name).length).toBe(1);
+      expect(angular.element(document.getElementsByName(name)[0]).attr('content')).toBe(content);
+    });
+  })
+
+  describe('configuration', function () {
+    beforeEach(function () {
+      module('material.core', function($mdThemingProvider) {
+            themingProvider = $mdThemingProvider;
+      });
+      startAngular();
+    });
+
+    it('should have access to read-only configuration', function () {
+      var config = themingProvider.configuration();
+
+      expect(config.disableTheming).toBe(false);
+      expect(config.generateOnDemand).toBe(false);
+      expect(config.registeredStyles.length).toBe(0);
+      expect(config.nonce).toBe(null);
+      expect(config.alwaysWatchTheme).toBe(false);
+
+      // Change local copies
+      config.disableTheming = true;
+      config.generateOnDemand = true;
+      config.registeredStyles.push("Something");
+      config.nonce = 'myNonce';
+      config.alwaysWatchTheme = true;
+
+      var config2 = themingProvider.configuration();
+
+      // Confirm master versions are not altered
+      expect(config2.disableTheming).toBe(false);
+      expect(config2.generateOnDemand).toBe(false);
+      expect(config2.registeredStyles.length).toBe(0);
+      expect(config2.nonce).toBe(null);
+      expect(config2.alwaysWatchTheme).toBe(false);
+
+    });
+
+
+  })
+});
+
+describe('$mdThemeProvider with custom styles', function() {
+  it('appends the custom styles to the end of the $MD_THEME_CSS string', function() {
+    module('material.core', function($mdThemingProvider) {
+      $mdThemingProvider.registerStyles('/*test*/');
+      $mdThemingProvider.theme('register-custom-styles');
+    });
+
+    inject(function($MD_THEME_CSS) {
+      // Verify that $MD_THEME_CSS is still set to '/**/' in the test environment.
+      // Check angular-material-mocks.js for $MD_THEME_CSS latest value if this test starts to fail.
+      expect($MD_THEME_CSS).toBe('/**/');
+    });
+
+    // Find the string '/**//*test*/' in the head tag.
+    expect(document.head.innerHTML).toContain('/*test*/');
+  });
 });
 
 describe('$mdThemeProvider with on-demand generation', function() {
@@ -366,6 +515,100 @@ describe('$mdThemeProvider with on-demand generation', function() {
     expect(styles.length).toBe(8);
     expect(document.head.innerHTML).toMatch(/md-sweden-theme/);
     expect(document.head.innerHTML).toMatch(/md-belarus-theme/);
+  });
+});
+
+describe('$mdThemeProvider with a theme that ends in a newline', function() {
+  beforeEach(function() {
+    module('material.core', function($provide) {
+      // Note that it should end with a newline
+      $provide.constant('$MD_THEME_CSS', "sparkle.md-THEME_NAME-theme { color: '{{primary-color}}' }\n");
+    });
+
+    inject(function($mdTheming) {});
+  });
+
+  it('should not add an extra closing bracket if the stylesheet ends with a newline', function() {
+    var style = document.head.querySelector('style[md-theme-style]');
+    expect(style.innerText).not.toContain('}}');
+    style.parentNode.removeChild(style);
+  });
+});
+
+describe('$mdThemeProvider with disabled themes', function() {
+
+  function getThemeStyleElements() {
+    return document.head.querySelectorAll('style[md-theme-style]');
+  }
+
+  function cleanThemeStyleElements() {
+    angular.forEach(getThemeStyleElements(), function(style) {
+      document.head.removeChild(style);
+    });
+  }
+  beforeEach(function() {
+
+    module('material.core', function($provide, $mdThemingProvider) {
+      // Use a single simple style rule for which we can check presence / absense.
+      $provide.constant('$MD_THEME_CSS', "sparkle.md-THEME_NAME-theme { color: '{{primary-color}}' }");
+
+      $mdThemingProvider
+        .theme('belarus')
+        .primaryPalette('red')
+        .accentPalette('green');
+
+    });
+  });
+
+  afterEach(function() {
+    cleanThemeStyleElements();
+  });
+
+  describe('can disable themes programmatically', function() {
+    beforeEach(function() {
+      cleanThemeStyleElements();
+
+      module('material.core', function($mdThemingProvider) {
+        $mdThemingProvider.disableTheming();
+      });
+    });
+
+    it('should not add any theme styles', function() {
+      var styles = getThemeStyleElements();
+      expect(styles.length).toBe(0);
+    });
+  });
+
+  describe('can disable themes declaratively', function() {
+    beforeEach(function() {
+      // Set the body attribute BEFORE the theming module is loaded
+      var el = document.getElementsByTagName('body')[0];
+          el.setAttribute('md-themes-disabled', '');
+    });
+
+    afterEach(function() {
+      var el = document.getElementsByTagName('body')[0];
+          el.removeAttribute('md-themes-disabled');
+    });
+
+    it('should not set any classnames', function() {
+      inject(function($rootScope, $compile, $mdTheming) {
+        el = $compile('<h1>Test</h1>')($rootScope);
+        $mdTheming(el);
+        expect(el.hasClass('md-default-theme')).toBe(false);
+      });
+    });
+
+    it('should not inject any styles', function() {
+      inject(function($rootScope, $compile, $mdTheming) {
+        el = $compile('<h1>Test</h1>')($rootScope);
+        $mdTheming(el);
+
+        var styles = getThemeStyleElements();
+        expect(styles.length).toBe(0);
+      });
+    });
+
   });
 });
 
@@ -493,6 +736,23 @@ describe('$mdTheming service', function() {
   it('exposes a getter for the default theme', inject(function($mdTheming) {
     expect($mdTheming.defaultTheme()).toBe('default');
   }));
+
+  it('supports changing browser color on the fly', function() {
+    var name = 'theme-color';
+    var primaryPalette = $mdThemingProvider._THEMES.default.colors.primary.name;
+    var primaryColor = $mdThemingProvider._PALETTES[primaryPalette]['800'].hex;
+    var redColor = $mdThemingProvider._PALETTES.red['800'].hex;
+
+    $mdThemingProvider.enableBrowserColor();
+
+    expect(angular.element(document.getElementsByName(name)[0]).attr('content')).toBe(primaryColor);
+
+    inject(function($mdTheming) {
+      $mdTheming.setBrowserColor({ palette: 'red' });
+
+      expect(angular.element(document.getElementsByName(name)[0]).attr('content')).toBe(redColor);
+    });
+  });
 });
 
 describe('md-theme directive', function() {
@@ -543,7 +803,7 @@ describe('md-themable directive', function() {
     $rootScope.themey = 'red';
     var el = $compile('<div md-theme="{{themey}}"><span md-themable md-theme-watch></span></div>')($rootScope);
     $rootScope.$apply();
-    
+
     expect(el.children().hasClass('md-red-theme')).toBe(true);
     $rootScope.$apply('themey = "blue"');
     expect(el.children().hasClass('md-blue-theme')).toBe(true);
@@ -554,7 +814,7 @@ describe('md-themable directive', function() {
     $rootScope.themey = 'red';
     var el = $compile('<div md-theme="{{themey}}"><span md-themable></span></div>')($rootScope);
     $rootScope.$apply();
-    
+
     expect(el.children().hasClass('md-red-theme')).toBe(true);
     $rootScope.$apply('themey = "blue"');
     expect(el.children().hasClass('md-blue-theme')).toBe(false);

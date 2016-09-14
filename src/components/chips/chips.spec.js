@@ -6,8 +6,6 @@ describe('<md-chips>', function() {
     '<md-chips ng-model="items"></md-chips>';
   var CHIP_TRANSFORM_TEMPLATE =
     '<md-chips ng-model="items" md-transform-chip="transformChip($chip)"></md-chips>';
-  var CHIP_APPEND_TEMPLATE =
-    '<md-chips ng-model="items" md-on-append="appendChip($chip)"></md-chips>';
   var CHIP_ADD_TEMPLATE =
     '<md-chips ng-model="items" md-on-add="addChip($chip, $index)"></md-chips>';
   var CHIP_REMOVE_TEMPLATE =
@@ -20,6 +18,8 @@ describe('<md-chips>', function() {
     '<md-chips ng-model="items" readonly="true">' +
     '  <md-autocomplete md-items="item in [\'hi\', \'ho\', \'he\']"></md-autocomplete>' +
     '</md-chips>';
+  var CHIP_NOT_REMOVABLE_TEMPLATE =
+    '<md-chips ng-model="items" readonly="true" md-removable="false"></md-chips>';
 
   afterEach(function() {
     attachedElements.forEach(function(element) {
@@ -115,34 +115,6 @@ describe('<md-chips>', function() {
         expect(chips[1].innerHTML).toContain('Orange');
       });
 
-      // TODO: Remove in 1.0 release after deprecation
-      it('should warn of deprecation when using md-on-append', inject(function($log) {
-        spyOn($log, 'warn');
-        buildChips(CHIP_APPEND_TEMPLATE);
-        expect($log.warn).toHaveBeenCalled();
-      }));
-
-      // TODO: Remove in 1.0 release after deprecation
-      it('should retain the deprecated md-on-append functionality until removed', function() {
-        var element = buildChips(CHIP_APPEND_TEMPLATE);
-        var ctrl = element.controller('mdChips');
-
-        var doubleText = function(text) {
-          return "" + text + text;
-        };
-        scope.appendChip = jasmine.createSpy('appendChip').and.callFake(doubleText);
-
-        element.scope().$apply(function() {
-          ctrl.chipBuffer = 'Grape';
-          simulateInputEnterKey(ctrl);
-        });
-
-        expect(scope.appendChip).toHaveBeenCalled();
-        expect(scope.appendChip.calls.mostRecent().args[0]).toBe('Grape');
-        expect(scope.items.length).toBe(4);
-        expect(scope.items[3]).toBe('GrapeGrape');
-      });
-
       it('should call the transform method when adding a chip', function() {
         var element = buildChips(CHIP_TRANSFORM_TEMPLATE);
         var ctrl = element.controller('mdChips');
@@ -231,29 +203,210 @@ describe('<md-chips>', function() {
         expect(scope.selectChip.calls.mostRecent().args[0]).toBe('Grape');
       });
 
-      it('should handle appending an object chip', function() {
-        var element = buildChips(CHIP_APPEND_TEMPLATE);
-        var ctrl = element.controller('mdChips');
+      describe('when adding chips on blur', function() {
 
-        var chipObj = function(chip) {
-          return {
-            name: chip,
-            uppername: chip.toUpperCase()
-          };
-        };
+        it('should append a new chip for the remaining text', function() {
+          var element = buildChips(
+            '<md-chips ng-model="items" md-add-on-blur="true">' +
+            '</md-chips>'
+          );
 
-        scope.appendChip = jasmine.createSpy('appendChip').and.callFake(chipObj);
+          var input = element.find('input');
 
-        element.scope().$apply(function() {
-          ctrl.chipBuffer = 'Grape';
-          simulateInputEnterKey(ctrl);
+          expect(scope.items.length).toBe(3);
+
+          input.val('Remaining');
+          input.triggerHandler('change');
+
+          // Trigger a blur event, to check if the text was converted properly.
+          input.triggerHandler('blur');
+
+          expect(scope.items.length).toBe(4);
         });
 
-        expect(scope.appendChip).toHaveBeenCalled();
-        expect(scope.appendChip.calls.mostRecent().args[0]).toBe('Grape');
-        expect(scope.items.length).toBe(4);
-        expect(scope.items[3].name).toBe('Grape');
-        expect(scope.items[3].uppername).toBe('GRAPE');
+        it('should not append a new chip if the limit has reached', function() {
+          var element = buildChips(
+            '<md-chips ng-model="items" md-add-on-blur="true" md-max-chips="3">' +
+            '</md-chips>'
+          );
+
+          var input = element.find('input');
+
+          expect(scope.items.length).toBe(3);
+
+          input.val('Remaining');
+          input.triggerHandler('change');
+
+          // Trigger a blur event, to check if the text was converted properly.
+          input.triggerHandler('blur');
+
+          expect(scope.items.length).toBe(3);
+        });
+
+        it('should not append a new chip when the chips model is invalid', function() {
+          var element = buildChips(
+            '<md-chips ng-model="items" md-add-on-blur="true">'
+          );
+
+          var input = element.find('input');
+          var ngModelCtrl = element.controller('ngModel');
+
+          expect(scope.items.length).toBe(3);
+
+          input.val('Remaining');
+
+          input.triggerHandler('change');
+          input.triggerHandler('blur');
+          $timeout.flush();
+
+          expect(scope.items.length).toBe(4);
+
+          input.val('Second');
+
+          ngModelCtrl.$setValidity('is-valid', false);
+
+          input.triggerHandler('change');
+          input.triggerHandler('blur');
+
+          expect(scope.items.length).toBe(4);
+        });
+
+        it('should not append a new chip when the custom input model is invalid', function() {
+          var element = buildChips(
+            '<md-chips ng-model="items" md-add-on-blur="true">' +
+              '<input ng-model="subModel" ng-maxlength="2">' +
+            '</md-chips>'
+          );
+
+          $timeout.flush();
+
+          var input = element.find('input');
+
+          expect(scope.items.length).toBe(3);
+
+          input.val('EN');
+
+          input.triggerHandler('change');
+          input.triggerHandler('blur');
+
+          // Flush the timeout after each blur, because custom inputs have listeners running
+          // in an Angular digest.
+          $timeout.flush();
+
+          expect(scope.items.length).toBe(4);
+
+          input.val('Another');
+
+          input.triggerHandler('change');
+          input.triggerHandler('blur');
+
+          // Flush the timeout after each blur, because custom inputs have listeners running
+          // in an Angular digest.
+          $timeout.flush();
+
+          expect(scope.items.length).toBe(4);
+        });
+
+      });
+      
+      describe('when removable', function() {
+
+        it('should not append the input div when not removable and readonly is enabled', function() {
+          var element = buildChips(CHIP_NOT_REMOVABLE_TEMPLATE);
+          var wrap = element.children();
+          var controller = element.controller("mdChips");
+
+          expect(wrap.hasClass("md-removable")).toBe(false);
+          expect(controller.removable).toBe(false);
+
+          var containers = wrap[0].querySelectorAll(".md-chip-input-container");
+
+          expect(containers.length).toBe(0);
+
+          var removeContainer = wrap[0].querySelector('.md-chip-remove-container');
+          expect(removeContainer).not.toBeTruthy();
+        });
+
+        it('should not remove chip through the backspace/delete key when removable is set to false', inject(function($mdConstant) {
+          var element = buildChips(CHIP_NOT_REMOVABLE_TEMPLATE);
+          var wrap = element.find('md-chips-wrap');
+          var controller = element.controller("mdChips");
+          var chips = getChipElements(element);
+
+          expect(wrap.hasClass("md-removable")).toBe(false);
+          expect(controller.removable).toBe(false);
+
+          controller.selectChip(0);
+
+          wrap.triggerHandler({
+            type: 'keydown',
+            keyCode: $mdConstant.KEY_CODE.BACKSPACE
+          });
+
+          var updatedChips = getChipElements(element);
+
+          expect(chips.length).toBe(updatedChips.length);
+        }));
+
+        it('should remove a chip by default through the backspace/delete key', inject(function($mdConstant) {
+          var element = buildChips(BASIC_CHIP_TEMPLATE);
+          var wrap = element.find('md-chips-wrap');
+          var controller = element.controller("mdChips");
+          var chips = getChipElements(element);
+
+          controller.selectChip(0);
+
+          wrap.triggerHandler({
+            type: 'keydown',
+            keyCode: $mdConstant.KEY_CODE.BACKSPACE
+          });
+
+          var updatedChips = getChipElements(element);
+
+          expect(chips.length).not.toBe(updatedChips.length);
+        }));
+
+        it('should set removable to true by default', function() {
+          var element = buildChips(BASIC_CHIP_TEMPLATE);
+          var wrap = element.children();
+          var controller = element.controller('mdChips');
+
+          expect(wrap.hasClass('md-removable')).toBe(true);
+          // The controller variable is kept undefined by default, to allow us to difference between the default value
+          // and a user-provided value.
+          expect(controller.removable).toBe(undefined);
+
+          var containers = wrap[0].querySelectorAll(".md-chip-input-container");
+          expect(containers.length).not.toBe(0);
+
+          var removeContainer = wrap[0].querySelector('.md-chip-remove-container');
+          expect(removeContainer).toBeTruthy();
+        });
+
+        it('should append dynamically the remove button', function() {
+          var template = '<md-chips ng-model="items" readonly="true" md-removable="removable"></md-chips>';
+
+          scope.removable = false;
+
+          var element = buildChips(template);
+          var wrap = element.children();
+          var controller = element.controller("mdChips");
+
+          expect(wrap.hasClass("md-removable")).toBe(false);
+          expect(controller.removable).toBe(false);
+
+          var containers = wrap[0].querySelectorAll(".md-chip-remove-container");
+          expect(containers.length).toBe(0);
+
+          scope.$apply('removable = true');
+
+          expect(wrap.hasClass("md-removable")).toBe(true);
+          expect(controller.removable).toBe(true);
+
+          containers = wrap[0].querySelector(".md-chip-remove-container");
+          expect(containers).toBeTruthy();
+        });
+
       });
 
       describe('when readonly', function() {
@@ -303,21 +456,47 @@ describe('<md-chips>', function() {
 
           expect($exceptionHandler.errors).toEqual([]);
         });
+
+        it('should disable removing when `md-removable` is not defined', function() {
+          element = buildChips(
+            '<md-chips ng-model="items" readonly="isReadonly" md-removable="isRemovable"></md-chips>'
+          );
+
+          var wrap = element.find('md-chips-wrap');
+          ctrl = element.controller('mdChips');
+
+          expect(element.find('md-chips-wrap')).not.toHaveClass('md-readonly');
+
+          scope.$apply('isReadonly = true');
+
+          expect(element.find('md-chips-wrap')).toHaveClass('md-readonly');
+
+          expect(ctrl.removable).toBeUndefined();
+
+          var removeContainer = wrap[0].querySelector('.md-chip-remove-container');
+          expect(removeContainer).toBeFalsy();
+
+          scope.$apply('isRemovable = true');
+
+          removeContainer = wrap[0].querySelector('.md-chip-remove-container');
+          expect(removeContainer).toBeTruthy();
+        });
+
       });
 
       it('should disallow duplicate object chips', function() {
-        var element = buildChips(CHIP_APPEND_TEMPLATE);
+        var element = buildChips(CHIP_TRANSFORM_TEMPLATE);
         var ctrl = element.controller('mdChips');
 
         // Manually set the items
         ctrl.items = [{name: 'Apple', uppername: 'APPLE'}];
 
-        // Make our custom appendChip function return our existing item
+        // Make our custom transformChip function return our existing item
         var chipObj = function(chip) {
           return ctrl.items[0];
         };
 
-        scope.appendChip = jasmine.createSpy('appendChip').and.callFake(chipObj);
+        scope.transformChip = jasmine.createSpy('transformChip').and.callFake(chipObj);
 
         element.scope().$apply(function() {
           ctrl.chipBuffer = 'Apple';
@@ -325,12 +504,12 @@ describe('<md-chips>', function() {
         });
 
         expect(ctrl.items.length).toBe(1);
-        expect(scope.appendChip).toHaveBeenCalled();
-        expect(scope.appendChip.calls.mostRecent().args[0]).toBe('Apple');
+        expect(scope.transformChip).toHaveBeenCalled();
+        expect(scope.transformChip.calls.mostRecent().args[0]).toBe('Apple');
       });
 
       it('should disallow identical object chips', function() {
-        var element = buildChips(CHIP_APPEND_TEMPLATE);
+        var element = buildChips(CHIP_TRANSFORM_TEMPLATE);
         var ctrl = element.controller('mdChips');
 
         ctrl.items = [{name: 'Apple', uppername: 'APPLE'}];
@@ -341,7 +520,7 @@ describe('<md-chips>', function() {
             uppername: chip.toUpperCase()
           };
         };
-        scope.appendChip = jasmine.createSpy('appendChip').and.callFake(chipObj);
+        scope.transformChip = jasmine.createSpy('transformChip').and.callFake(chipObj);
 
         element.scope().$apply(function() {
           ctrl.chipBuffer = 'Apple';
@@ -349,8 +528,8 @@ describe('<md-chips>', function() {
         });
 
         expect(ctrl.items.length).toBe(1);
-        expect(scope.appendChip).toHaveBeenCalled();
-        expect(scope.appendChip.calls.mostRecent().args[0]).toBe('Apple');
+        expect(scope.transformChip).toHaveBeenCalled();
+        expect(scope.transformChip.calls.mostRecent().args[0]).toBe('Apple');
       });
 
       it('should prevent the default when backspace is pressed', inject(function($mdConstant) {
@@ -395,7 +574,10 @@ describe('<md-chips>', function() {
 
           // This string contains a lot of spaces, which should be trimmed.
           input.val('    Test    ');
-          input.triggerHandler('input');
+
+          // We have to trigger the `change` event, because IE11 does not support
+          // the `input` event to update the ngModel. An alternative for `input` is to use the `change` event.
+          input.triggerHandler('change');
 
           expect(ctrl.chipBuffer).toBeTruthy();
 
@@ -410,36 +592,118 @@ describe('<md-chips>', function() {
           expect(scope.items).toEqual(['Apple', 'Banana', 'Orange', 'Test']);
         }));
 
-        it('should not trim the input text of the input', inject(function($mdConstant) {
-          var element = buildChips(BASIC_CHIP_TEMPLATE);
-          var ctrl = element.controller('mdChips');
-          var input = element.find('input');
+        describe('with backspace event', function() {
 
-          input.val('    ');
-          input.triggerHandler('input');
+          var backspaceEvent, element, input, ctrl, isValidInput;
 
-          expect(ctrl.chipBuffer).toBeTruthy();
+          beforeEach(inject(function($mdConstant) {
+            backspaceEvent = {
+              type: 'keydown',
+              keyCode: $mdConstant.KEY_CODE.BACKSPACE,
+              which: $mdConstant.KEY_CODE.BACKSPACE,
+              preventDefault: jasmine.createSpy('preventDefault')
+            };
+          }));
 
-          var enterEvent = {
-            type: 'keydown',
-            keyCode: $mdConstant.KEY_CODE.BACKSPACE,
-            which: $mdConstant.KEY_CODE.BACKSPACE,
-            preventDefault: jasmine.createSpy('preventDefault')
-          };
+          afterEach(function() {
+            element && element.remove();
+          });
 
-          input.triggerHandler(enterEvent);
+          function createChips(template) {
+            element = buildChips(template);
+            input = element.find('input');
+            ctrl = element.controller('mdChips');
 
-          expect(enterEvent.preventDefault).not.toHaveBeenCalled();
+            $timeout.flush();
 
-          input.val('');
-          input.triggerHandler('input');
+            // Add the element to the document's body, because otherwise we won't be able
+            // to set the selection of the chip input.
+            document.body.appendChild(element[0]);
 
-          input.triggerHandler(enterEvent);
+            /** Detect whether the current input is supporting the `selectionStart` property */
+            var oldInputValue = input.val();
+            input.val('2');
+            isValidInput = angular.isDefined(ctrl.getCursorPosition(input[0]));
+            input.val(oldInputValue);
+          }
 
-          expect(enterEvent.preventDefault).toHaveBeenCalledTimes(1);
-        }));
+          /**
+           * Updates the cursor position of the input.
+           * This is necessary to test the cursor position.
+           */
+          function updateInputCursor() {
+            if (isValidInput) {
+              input[0].selectionStart = input[0].selectionEnd = input[0].value.length;
+            }
+          }
+
+          it('should properly cancel the backspace event to select the chip before', function() {
+            createChips(BASIC_CHIP_TEMPLATE);
+
+            input.val('    ');
+            updateInputCursor();
+            input.triggerHandler('change');
+
+            input.triggerHandler(backspaceEvent);
+            expect(backspaceEvent.preventDefault).not.toHaveBeenCalled();
+
+            input.val('');
+            updateInputCursor();
+            input.triggerHandler('change');
+
+
+            input.triggerHandler(backspaceEvent);
+            expect(backspaceEvent.preventDefault).toHaveBeenCalledTimes(1);
+          });
+
+          it('should properly cancel the backspace event to select the chip before', function() {
+            createChips(BASIC_CHIP_TEMPLATE);
+
+            input.val('    ');
+            updateInputCursor();
+            input.triggerHandler('change');
+
+
+            input.triggerHandler(backspaceEvent);
+            expect(backspaceEvent.preventDefault).not.toHaveBeenCalled();
+
+            input.val('');
+            updateInputCursor();
+            input.triggerHandler('change');
+
+            input.triggerHandler(backspaceEvent);
+            expect(backspaceEvent.preventDefault).toHaveBeenCalledTimes(1);
+          });
+
+          it('should properly handle the cursor position when using a number input', function() {
+            createChips(
+              '<md-chips ng-model="items">' +
+                '<input type="number" placeholder="Enter a number">' +
+              '</md-chips>'
+            );
+
+            input.val('2');
+            updateInputCursor();
+            input.triggerHandler('change');
+
+            input.triggerHandler(backspaceEvent);
+            $timeout.flush();
+
+            expect(backspaceEvent.preventDefault).not.toHaveBeenCalled();
+
+            input.val('');
+            updateInputCursor();
+            input.triggerHandler('change');
+
+            input.triggerHandler(backspaceEvent);
+            $timeout.flush();
+
+            expect(backspaceEvent.preventDefault).toHaveBeenCalledTimes(1);
+          });
+
+        });
+
       });
-
 
       it('focuses/blurs the component when focusing/blurring the input', inject(function() {
         var element = buildChips(BASIC_CHIP_TEMPLATE);
@@ -745,6 +1009,63 @@ describe('<md-chips>', function() {
           expect(element.find('input').val()).toBe('');
         }));
 
+        it('should properly cancel the backspace event to select the chip before', inject(function($mdConstant) {
+          setupScopeForAutocomplete();
+          var element = buildChips(AUTOCOMPLETE_CHIPS_TEMPLATE);
+
+          // Add the element to the document's body, because otherwise we won't be able
+          // to set the selection of the chip input.
+          document.body.appendChild(element[0]);
+
+          // The embedded `md-autocomplete` needs a timeout flush for it's initialization.
+          $timeout.flush();
+          $timeout.flush();
+          scope.$apply();
+
+          var input = angular.element(element[0].querySelector('md-autocomplete input'));
+
+
+          input.val('    ');
+          input.triggerHandler('input');
+
+          expect(input.controller('ngModel').$modelValue).toBe('');
+          // Since the `md-chips` component is testing the backspace select previous chip functionality by
+          // checking the current caret / cursor position, we have to set the cursor to the end of the current
+          // value.
+          input[0].selectionStart = input[0].selectionEnd = input[0].value.length;
+
+          var backspaceEvent = {
+            type: 'keydown',
+            keyCode: $mdConstant.KEY_CODE.BACKSPACE,
+            which: $mdConstant.KEY_CODE.BACKSPACE,
+            preventDefault: jasmine.createSpy('preventDefault')
+          };
+
+          input.triggerHandler(backspaceEvent);
+
+          // We have to trigger a digest, because the event listeners for the chips component will be called
+          // with an async digest evaluation.
+          scope.$digest();
+
+          expect(backspaceEvent.preventDefault).not.toHaveBeenCalled();
+
+          input.val('');
+          input.triggerHandler('input');
+
+          // Since the `md-chips` component is testing the backspace select previous chip functionality by
+          // checking the current caret / cursor position, we have to set the cursor to the end of the current
+          // value.
+          input[0].selectionStart = input[0].selectionEnd = input[0].value.length;
+
+          input.triggerHandler(backspaceEvent);
+          scope.$digest();
+
+          expect(backspaceEvent.preventDefault).toHaveBeenCalledTimes(1);
+
+          // Remove the chips element from the document's body.
+          document.body.removeChild(element[0]);
+        }));
+
         it('simultaneously allows selecting an existing chip AND adding a new one', inject(function($mdConstant) {
           // Setup our scope and function
           setupScopeForAutocomplete();
@@ -752,7 +1073,7 @@ describe('<md-chips>', function() {
 
           // Modify the base template to add md-transform-chip
           var modifiedTemplate = AUTOCOMPLETE_CHIPS_TEMPLATE
-            .replace('<md-chips', '<md-chips md-on-append="transformChip($chip)"');
+            .replace('<md-chips', '<md-chips md-transform-chip="transformChip($chip)"');
 
           var element = buildChips(modifiedTemplate);
 
@@ -935,6 +1256,14 @@ describe('<md-chips>', function() {
         expect(chipArray[0].innerHTML).toContain('1');
         expect(chipArray[1].innerHTML).toContain('2');
         expect(chipArray[2].innerHTML).toContain('3');
+      });
+
+      it('does not allow removal of chips', function() {
+        scope.chipItem = 'Football';
+        var element = buildChips(STATIC_CHIPS_TEMPLATE);
+        var wrap = element.find('md-chips-wrap');
+
+        expect(wrap).not.toHaveClass('md-removable');
       });
     });
 

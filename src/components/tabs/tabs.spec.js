@@ -57,11 +57,24 @@ describe('<md-tabs>', function () {
 
   describe('activating tabs', function () {
 
+    it('should have `._md` class indicator', inject(function() {
+      var tabs = setup(
+        '<md-tabs> ' +
+        '   <md-tab label="a">a</md-tab>' +
+        '   <md-tab label="b">b</md-tab>' +
+        '</md-tabs>'
+      );
+
+      expect(tabs.find('md-tabs-content-wrapper').hasClass('_md')).toBe(true);
+    }));
+
     it('should select first tab by default', function () {
-      var tabs = setup('<md-tabs>\
-            <md-tab label="a">a</md-tab>\
-            <md-tab label="b">b</md-tab>\
-          </md-tabs>');
+      var tabs = setup(
+              '<md-tabs> ' +
+              '   <md-tab label="a">a</md-tab>' +
+              '   <md-tab label="b">b</md-tab>' +
+              '</md-tabs>'
+          );
       expect(tabs.find('md-tab-item').eq(0)).toBeActiveTab();
     });
 
@@ -219,6 +232,114 @@ describe('<md-tabs>', function () {
       expect(tabs1[ 0 ].querySelector('md-tab-content').textContent.trim()).toBe('content that!');
     });
 
+    it('updates pagination and ink styles when string labels change', function(done) {
+      inject(function($rootScope, $timeout) {
+        // Setup our initial label
+        $rootScope.$apply('label = "Some Label"');
+
+        // Init our variables
+        var template = '<md-tabs><md-tab label="{{label}}"></md-tab></md-tabs>';
+        var tabs = setup(template);
+        var ctrl = tabs.controller('mdTabs');
+
+        // Flush the tabs controller timeout for initialization.
+        $timeout.flush();
+
+        // After the first timeout the mutation observer should have been fired once, because
+        // the initialization of the dummy tabs, already causes some mutations.
+        // Use setTimeout to add our expectations to the end of the call stack, after the
+        // MutationObservers have already fired
+        setTimeout(function() {
+          // Setup spies
+          spyOn(ctrl, 'updatePagination');
+          spyOn(ctrl, 'updateInkBarStyles');
+
+          // Update the label to trigger a new update of the pagination and InkBar styles.
+          $rootScope.$apply('label = "Another Label"');
+
+          // Use setTimeout to add our expectations to the end of the call stack, after the
+          // MutationObservers have already fired
+          setTimeout(function() {
+            expect(ctrl.updatePagination).toHaveBeenCalledTimes(1);
+            expect(ctrl.updateInkBarStyles).toHaveBeenCalledTimes(1);
+
+            done();
+          });
+        });
+      })
+    });
+
+    it('updates pagination and ink styles when content label changes', function(done) {
+      inject(function($rootScope, $timeout) {
+        // Setup our initial label
+        $rootScope.$apply('label = "Default Label"');
+
+        // Init our variables
+        var template = '' +
+          '<md-tabs>' +
+            '<md-tab>' +
+              '<md-tab-label>{{ label }}</md-tab-label>' +
+            '</md-tab>' +
+          '</md-tabs>';
+
+        var tabs = setup(template);
+        var ctrl = tabs.controller('mdTabs');
+
+        // Flush the tabs controller timeout for initialization.
+        $timeout.flush();
+
+        // After the first timeout the mutation observer should have been fired once, because
+        // the initialization of the dummy tabs, already causes some mutations.
+        // Use setTimeout to add our expectations to the end of the call stack, after the
+        // MutationObservers have already fired
+        setTimeout(function() {
+          // Setup spies
+          spyOn(ctrl, 'updatePagination');
+          spyOn(ctrl, 'updateInkBarStyles');
+
+          // Update the label to trigger a new update of the pagination and InkBar styles.
+          $rootScope.$apply('label = "New Label"');
+
+          // Use setTimeout to add our expectations to the end of the call stack, after the
+          // MutationObservers have already fired
+          setTimeout(function() {
+            expect(ctrl.updatePagination).toHaveBeenCalledTimes(1);
+            expect(ctrl.updateInkBarStyles).toHaveBeenCalledTimes(1);
+
+            done();
+          });
+        });
+      })
+    });
+
+    it('updates pagination and ink styles when HTML labels change', function(done) {
+      inject(function($rootScope) {
+        // Setup our initial label
+        $rootScope.$apply('label = "Some Label"');
+
+        // Init our variables
+        var template = '<md-tabs><md-tab><md-tab-label>{{label}}</md-tab-label></md-tab></md-tabs>';
+        var tabs = setup(template);
+        var ctrl = tabs.controller('mdTabs');
+
+        // Setup spies
+        spyOn(ctrl, 'updatePagination');
+        spyOn(ctrl, 'updateInkBarStyles');
+
+        // Change the label
+        $rootScope.$apply('label="Another Label"');
+
+        // Use window.setTimeout to add our expectations to the end of the call stack, after the
+        // MutationObservers have already fired
+        window.setTimeout(function() {
+          // Fire expectations
+          expect(ctrl.updatePagination.calls.count()).toBe(1);
+          expect(ctrl.updateInkBarStyles.calls.count()).toBe(1);
+
+          done();
+        });
+      })
+    });
   });
 
   describe('aria', function () {

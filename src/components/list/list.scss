@@ -37,20 +37,6 @@ $list-item-dense-header-font-size: round($subhead-font-size-base * 0.8) !default
 $list-item-dense-font-size: round($body-font-size-base * 0.85) !default;
 $list-item-dense-line-height: 1.05 !default;
 
-// This is a mixin, which fixes IE11's vertical alignment issue, when using `min-height`.
-// This mixin isn't that much generic to be used in other cases.
-// It can be only used for the list-item's button container.
-// See https://connect.microsoft.com/IE/feedback/details/816293/
-@mixin ie11-min-height-flexbug($min-height) {
-  div.md-button:first-child {
-    &::before {
-      content: '';
-      min-height: $min-height;
-      visibility: hidden;
-    }
-  }
-}
-
 md-list {
   display: block;
   padding: $list-padding-top $list-padding-right $list-padding-bottom $list-padding-left;
@@ -65,8 +51,10 @@ md-list {
   &.md-dense {
     md-list-item {
       &,
-      ._md-list-item-inner {
+      .md-list-item-inner {
         min-height: $list-item-dense-height;
+        @include ie11-min-height-flexbug($list-item-dense-height);
+
 
         // Layout for controls in primary or secondary divs, or auto-infered first child
 
@@ -76,12 +64,13 @@ md-list {
         }
 
         > md-icon:first-child:not(.md-avatar-icon) {
-          @include rtl-prop(margin-right, margin-left, $list-item-primary-width - $list-item-dense-primary-icon-width);
+          @include rtl-prop(margin-right, margin-left, $list-item-primary-width - $list-item-dense-primary-icon-width, auto);
         }
         .md-avatar, .md-avatar-icon {
-          @include rtl-prop(margin-right, margin-left, $list-item-primary-width - $list-item-dense-primary-avatar-width);
+          @include rtl-prop(margin-right, margin-left, $list-item-primary-width - $list-item-dense-primary-avatar-width, auto);
         }
         .md-avatar {
+          flex: none;
           width: $list-item-dense-primary-avatar-width;
           height: $list-item-dense-primary-avatar-width;
         }
@@ -89,10 +78,10 @@ md-list {
 
       &.md-2-line,
       &.md-3-line {
-        &, & > ._md-no-style {
+        &, & > .md-no-style {
           .md-list-item-text {
             &.md-offset {
-              @include rtl-prop(margin-left, margin-right, $list-item-primary-width);
+              @include rtl-prop(margin-left, margin-right, $list-item-primary-width, auto);
             }
 
             h3,
@@ -110,9 +99,8 @@ md-list {
       }
 
       &.md-2-line {
-        &, & > ._md-no-style {
+        &, & > .md-no-style {
           min-height: $list-item-dense-two-line-height;
-
           @include ie11-min-height-flexbug($list-item-dense-two-line-height);
 
           > .md-avatar, .md-avatar-icon {
@@ -122,9 +110,9 @@ md-list {
       }
 
       &.md-3-line {
-        &, & > ._md-no-style {
-          min-height: $list-item-dense-three-line-height;
+        &, & > .md-no-style {
 
+          min-height: $list-item-dense-three-line-height;
           @include ie11-min-height-flexbug($list-item-dense-three-line-height);
 
           > md-icon:first-child,
@@ -141,7 +129,7 @@ md-list-item {
   // Ensure nested dividers are properly positioned
   position: relative;
 
-  &._md-proxy-focus.md-focused ._md-no-style {
+  &.md-proxy-focus.md-focused .md-no-style {
     transition: background-color 0.15s linear;
   }
 
@@ -149,16 +137,13 @@ md-list-item {
     position: relative;
 
     > div.md-button:first-child {
-      // Vertically align the item content.
+      // Layout - Vertically align the item content.
       display: flex;
       align-items: center;
       justify-content: flex-start;
 
       padding: 0 16px;
       margin: 0;
-
-      // The button should not inherit the parents background color.
-      background-color: initial;
 
       font-weight: 400;
       @include rtl(text-align, left, right);
@@ -175,20 +160,22 @@ md-list-item {
         padding: 0;
       }
 
-      ._md-list-item-inner {
+      .md-list-item-inner {
         // The list item content should fill the complete width.
         width: 100%;
-        height: 100%;
+        min-height: inherit;
       }
 
     }
 
   }
 
-  &._md-no-proxy,
-  ._md-no-style {
+  &.md-no-proxy,
+  .md-no-style {
     position: relative;
     padding: $list-item-padding-vertical $list-item-padding-horizontal;
+
+    // Layout [flex='auto']
     flex: 1 1 auto;
 
     &.md-button {
@@ -218,21 +205,26 @@ md-list-item {
   md-divider {
     position: absolute;
     bottom: 0;
-    @include rtl-prop(left, right, 0);
+    @include rtl-prop(left, right, 0, auto);
     width: 100%;
     &[md-inset] {
-      @include rtl-prop(left, right, $list-item-inset-divider-offset);
+      @include rtl-prop(left, right, $list-item-inset-divider-offset, auto);
       width: calc(100% - #{$list-item-inset-divider-offset});
       margin: 0 !important;
     }
   }
 
   &,
-  ._md-list-item-inner {
+  .md-list-item-inner {
+
+    // Layout [flex layout-align='start center']
     display: flex;
     justify-content: flex-start;
     align-items: center;
+
     min-height: $list-item-height;
+    @include ie11-min-height-flexbug($list-item-height);
+
     height: auto;
 
     // Layout for controls in primary or secondary divs, or auto-infered first child
@@ -256,22 +248,30 @@ md-list-item {
     }
 
     & > md-icon:first-child:not(.md-avatar-icon) {
-      @include rtl-prop(margin-right, margin-left, $list-item-primary-width - $list-item-primary-icon-width);
+      @include rtl-prop(margin-right, margin-left, $list-item-primary-width - $list-item-primary-icon-width, auto);
     }
 
     & .md-avatar, .md-avatar-icon {
       margin-top: $baseline-grid;
       margin-bottom: $baseline-grid;
-      @include rtl-prop(margin-right, margin-left, $list-item-primary-width - $list-item-primary-avatar-width);
+      @include rtl-prop(margin-right, margin-left, $list-item-primary-width - $list-item-primary-avatar-width, auto);
       border-radius: 50%;
       box-sizing: content-box;
     }
     & .md-avatar {
+      flex: none;
       width: $list-item-primary-avatar-width;
       height: $list-item-primary-avatar-width;
     }
     & .md-avatar-icon {
       padding: 8px;
+
+      // Set the width/height to the same as the icon to fix issue on iOS Safari where the
+      // height: 100% was causing it to be larger than it's parent
+      svg {
+        width: $icon-size;
+        height: $icon-size;
+      }
     }
 
     & > md-checkbox {
@@ -281,17 +281,28 @@ md-list-item {
       margin-top: 16px;
     }
 
-    ._md-secondary-container {
+    .md-secondary-container {
       display: flex;
       align-items: center;
 
-      height: 100%;
+      // Per W3C: https://www.w3.org/TR/css-flexbox/#flex-common
+      // By default, flex items won’t shrink below their minimum content size.
+      // Safari doesn't follow that specification due to a bug and expects the developer to
+      // explicitly disable flex shrinking.
+      flex-shrink: 0;
+
+      // Using margin auto to move them to the end of the list item is more elegant, because it has
+      // a lower priority than a flex filler and isn't introducing any overflow issues.
+      // The margin on the top is important to align multiple secondary items vertically.
       margin: auto;
+
+      @include rtl(margin-right, 0, auto);
+      @include rtl(margin-left, auto, 0);
 
       .md-button, .md-icon-button {
         &:last-of-type {
           // Reset 6px margin for the button.
-          @include rtl-prop(margin-right, margin-left, 0px);
+          @include rtl-prop(margin-right, margin-left, 0, auto);
         }
       }
 
@@ -301,7 +312,7 @@ md-list-item {
 
         &:last-child {
           width: 3 * $baseline-grid;
-          @include rtl-prop(margin-right, margin-left, 0);
+          @include rtl-prop(margin-right, margin-left, 0, auto);
         }
       }
 
@@ -309,11 +320,11 @@ md-list-item {
         margin-top: 0;
         margin-bottom: 0;
 
-        @include rtl-prop(margin-right, margin-left, -6px);
+        @include rtl-prop(margin-right, margin-left, -6px, auto);
       }
     }
 
-    & > p, & > ._md-list-item-inner > p {
+    & > p, & > .md-list-item-inner > p {
       flex: 1 1 auto;
       margin: 0;
     }
@@ -321,7 +332,7 @@ md-list-item {
 
   &.md-2-line,
   &.md-3-line {
-    &, & > ._md-no-style {
+    &, & > .md-no-style {
       align-items: flex-start;
       justify-content: center;
 
@@ -337,7 +348,7 @@ md-list-item {
         overflow: hidden;
 
         &.md-offset {
-        @include rtl-prop(margin-left, margin-right, $list-item-primary-width);
+          @include rtl-prop(margin-left, margin-right, $list-item-primary-width, auto);
         }
 
         h3 {
@@ -372,18 +383,20 @@ md-list-item {
   }
 
   &.md-2-line {
-    &, & > ._md-no-style {
+    &, & > .md-no-style {
       height: auto;
-      min-height: $list-item-two-line-height;
 
+      min-height: $list-item-two-line-height;
       @include ie11-min-height-flexbug($list-item-two-line-height);
 
       > .md-avatar, .md-avatar-icon {
         margin-top: $baseline-grid * 1.5;
       }
+
       > md-icon:first-child {
         align-self: flex-start;
       }
+
       .md-list-item-text {
         flex: 1 1 auto;
       }
@@ -391,10 +404,10 @@ md-list-item {
   }
 
   &.md-3-line {
-    &, & > ._md-no-style {
+    &, & > .md-no-style {
       height: auto;
-      min-height: $list-item-three-line-height;
 
+      min-height: $list-item-three-line-height;
       @include ie11-min-height-flexbug($list-item-three-line-height);
 
       > md-icon:first-child,

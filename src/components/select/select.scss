@@ -8,7 +8,24 @@ $select-container-transition-duration: 350ms !default;
 
 $select-max-visible-options: 5 !default;
 
-._md-select-menu-container {
+// Fixes the animations with the floating label when select is inside an input container
+md-input-container {
+  &:not([md-no-float]) {
+    .md-select-placeholder span:first-child {
+      transition: transform $swift-ease-out-duration $swift-ease-out-timing-function;
+      @include rtl(transform-origin, left top, right top);
+    }
+  }
+  &.md-input-focused {
+    &:not([md-no-float]) {
+      .md-select-placeholder span:first-child {
+        transform: translateY(-22px) translateX(-2px) scale(0.75);
+      }
+    }
+  }
+}
+
+.md-select-menu-container {
   position: fixed;
   left: 0;
   top: 0;
@@ -16,8 +33,11 @@ $select-max-visible-options: 5 !default;
   opacity: 0;
   display: none;
 
+  // Fix 1px alignment issue to line up with text inputs (and spec)
+  transform: translateY(-1px);
+
   // Don't let the user select a new choice while it's animating
-  &:not(._md-clickable) {
+  &:not(.md-clickable) {
     pointer-events: none;
   }
 
@@ -28,7 +48,7 @@ $select-max-visible-options: 5 !default;
 
 
   // enter: md-select scales in, then options fade in.
-  &._md-active {
+  &.md-active {
     display: block;
     opacity: 1;
     md-select-menu {
@@ -44,7 +64,7 @@ $select-max-visible-options: 5 !default;
   }
 
   // leave: the container fades out
-  &._md-leave {
+  &.md-leave {
     opacity: 0;
     transition: $swift-ease-in;
     transition-duration: 250ms;
@@ -56,10 +76,45 @@ md-input-container > md-select {
   order: 2;
 }
 
+
+// Show the asterisk on the placeholder if the element is required
+//
+// NOTE: When the input has a value and uses a floating label, the floating label will show the
+// asterisk denoting that it is required
+md-input-container:not(.md-input-has-value) {
+  md-select[required]:not(.md-no-asterisk), md-select.ng-required:not(.md-no-asterisk) {
+    .md-select-value span:first-child:after {
+      content: ' *';
+      font-size: 13px;
+      vertical-align: top;
+    }
+  }
+}
+
+md-input-container.md-input-invalid {
+  md-select {
+    .md-select-value {
+      border-bottom-style: solid;
+      padding-bottom: 1px;
+    }
+  }
+}
+
 md-select {
   display: flex;
   margin: 2.5*$baseline-grid 0 3*$baseline-grid + 2 0;
-  &[disabled] ._md-select-value {
+
+  &[required], &.ng-required {
+    &.ng-invalid:not(.md-no-asterisk) {
+      .md-select-value span:first-child:after {
+        content: ' *';
+        font-size: 13px;
+        vertical-align: top;
+      }
+    }
+  }
+
+  &[disabled] .md-select-value {
     background-position: 0 bottom;
     // This background-size is coordinated with a linear-gradient set in select-theme.scss
     // to create a dotted line under the input.
@@ -67,6 +122,7 @@ md-select {
     background-repeat: repeat-x;
     margin-bottom: -1px; // Shift downward so dotted line is positioned the same as other bottom borders
   }
+
   &:focus {
     outline: none;
   }
@@ -77,24 +133,35 @@ md-select {
     &:hover {
       cursor: pointer
     }
-    &.ng-invalid.ng-dirty {
-      ._md-select-value {
-        border-bottom: 2px solid;
-        padding-bottom: 0;
+    &.ng-invalid.ng-touched {
+      .md-select-value {
+        border-bottom-style: solid;
+        padding-bottom: 1px;
       }
     }
     &:focus {
-      ._md-select-value {
+      .md-select-value {
         border-bottom-width: 2px;
         border-bottom-style: solid;
         padding-bottom: 0;
+      }
+      &.ng-invalid.ng-touched {
+        .md-select-value {
+          padding-bottom: 0;
+        }
       }
     }
   }
 }
 
+// Fix value by 1px to align with standard text inputs (and spec)
+md-input-container.md-input-has-value .md-select-value {
+  > span:not(.md-select-icon) {
+    transform: translate3d(0, 1px, 0);
+  }
+}
 
-._md-select-value {
+.md-select-value {
   display: flex;
   align-items: center;
   padding: 2px 2px 1px;
@@ -108,38 +175,39 @@ md-select {
   flex-grow: 1;
 
 
-  > span:not(._md-select-icon) {
+  > span:not(.md-select-icon) {
     max-width: 100%;
     flex: 1 1 auto;
-    transform: translate3d(0, 2px, 0);
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
 
-    ._md-text {
+    .md-text {
       display: inline;
     }
   }
 
-  ._md-select-icon {
+  .md-select-icon {
     display: block;
     align-items: flex-end;
     text-align: end;
     width: 3 * $baseline-grid;
     margin: 0 .5 * $baseline-grid;
-    transform: translate3d(0, 1px, 0);
+    transform: translate3d(0, -2px, 0);
+    font-size: 1.2rem;
   }
 
-  ._md-select-icon:after {
+  .md-select-icon:after {
     display: block;
     content: '\25BC';
     position: relative;
     top: 2px;
     speak: none;
-    transform: scaleY(0.6) scaleX(1);
+    font-size: 13px;
+    transform: scaleY(0.5) scaleX(1);
   }
 
-  &._md-select-placeholder {
+  &.md-select-placeholder {
     display: flex;
     order: 1;
     pointer-events: none;
@@ -156,7 +224,7 @@ md-select-menu {
     flex-direction: column-reverse;
   }
 
-  &:not(._md-overflow) {
+  &:not(.md-overflow) {
     md-content {
       padding-top: $baseline-grid;
       padding-bottom: $baseline-grid;
@@ -199,13 +267,12 @@ md-option {
     outline: none;
   }
 
-  ._md-text {
+  .md-text {
     @include not-selectable();
     width: auto;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: rem(1.6);
   }
   padding: 0 $select-option-padding 0 $select-option-padding;
   height: $select-option-height;
@@ -227,7 +294,7 @@ md-optgroup {
 }
 
 @media screen and (-ms-high-contrast: active) {
-  ._md-select-backdrop {
+  .md-select-backdrop {
     background-color: transparent;
   }
   md-select-menu {
@@ -236,13 +303,13 @@ md-optgroup {
 }
 
 md-select-menu[multiple] {
-  md-option[md-checkbox-enabled] {
+  md-option.md-checkbox-enabled {
     @include rtl(padding-left, $select-option-padding * 2.5, $select-option-padding);
     @include rtl(padding-right, $select-option-padding, $select-option-padding * 2.5);
 
     @include checkbox-container('[selected]');
 
-    ._md-container {
+    .md-container {
       @include rtl(margin-left, $select-option-padding * (2 / 3), auto);
       @include rtl(margin-right, auto, $select-option-padding * (2 / 3));
     }
